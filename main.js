@@ -194,13 +194,13 @@ $(function() {
         $('head title').html(term);
         if (!chars.hasOwnProperty(term)) {
             $('#nothing-found').show();
-            $('#char-info').hide();
+            $('#results').hide();
         } else {
             let char = chars[term];
             console.log(char);
             $('#nothing-found').hide();
+            $('#results').show();
             let charInfo = $('#char-info');
-            charInfo.show();
             /**
              * @param {Char|string|null} char
              */

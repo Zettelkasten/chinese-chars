@@ -255,7 +255,7 @@ $(function() {
             for (let word of words[term]) {
                 console.log(word);
                 wordList.append('<div class="word-info">' +
-                    `Characters: ${word.chars.map(makeCharHtml).join(' ')}<br>` +
+                    `Characters: ${word.chars.map(makeCharHtml).join(', ')}<br>` +
                     `Pinyin: ${pinyinify(word.pinyin)}<br>` +
                     `Translation: ${word.translation}` + '</div>')
                 foundResults = true;

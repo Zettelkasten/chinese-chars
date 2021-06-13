@@ -231,7 +231,7 @@ $(function() {
                 console.log(word);
                 wordList.append('<div class="word-info">' +
                     `Characters: ${word.chars.map(makeCharHtml).join(' ')}<br>` +
-                    `Pinyin: ${word.pinyin}<br>` +
+                    `Pinyin: ${pinyinify(word.pinyin)}<br>` +
                     `Translation: ${word.translation}` + '</div>')
                 foundResults = true;
             }

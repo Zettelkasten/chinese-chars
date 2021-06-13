@@ -90,7 +90,7 @@ $(function() {
                     componentOf.push(char);
                 }
             }
-            return componentOf
+            return componentOf;
         }
 
         /**
@@ -108,7 +108,7 @@ $(function() {
                     }
                 }
             }
-            return usedIn
+            return usedIn;
         }
     }
 
@@ -155,12 +155,14 @@ $(function() {
          * @param {Array.<Char>} chars
          * @param {string} pinyin
          * @param {string} translation
+         * @param {int|null} hask_num
          */
-        constructor(chars, pinyin, translation) {
+        constructor(chars, pinyin, translation, hsk_num) {
             console.assert(chars.length >= 1);
             this.chars = chars;
             this.pinyin = pinyin;
             this.translation = translation;
+            this.hsk_num = hsk_num;
         }
 
         /**
@@ -177,8 +179,9 @@ $(function() {
     /**
      * @param {string} tsvFile
      * @param {Object.<Char>} knownChars
+     * @param {int|null} hsk_num
      */
-    let loadWordList = function(tsvFile, knownChars) {
+    let loadWordList = function(tsvFile, knownChars, hsk_num) {
         let lines = tsvFile.split('\n');
         for (let line of lines) {
             line = line.trim();
@@ -189,7 +192,7 @@ $(function() {
             let charHanzi = hanzi.split('');
             /** @type Array.<Char> */
             let wordChars = charHanzi.map(hanzi => knownChars[hanzi]);
-            let word = new Word(wordChars, pinyin, translation);
+            let word = new Word(wordChars, pinyin, translation, hsk_num);
             console.assert(word.hanzi === hanzi);
             if (!words.hasOwnProperty(hanzi)) {
                 words[hanzi] = new Set();
@@ -201,9 +204,9 @@ $(function() {
     $.get('/ccd.tsv', function(tsvFile) {
         loadCompositionData(tsvFile);
     }).then(function() {
-        for (let num = 1; num <= 6; num++) {
-            $.get(`/hsk${num}.tsv`, function (tsvFile) {
-                loadWordList(tsvFile, chars);
+        for (let hsk_num = 1; hsk_num <= 6; hsk_num++) {
+            $.get(`/hsk${hsk_num}.tsv`, function (tsvFile) {
+                loadWordList(tsvFile, chars, hsk_num);
             });
         }
     }).then(function() {
@@ -257,7 +260,8 @@ $(function() {
                 wordList.append('<div class="word-info">' +
                     `Characters: ${word.chars.map(makeCharHtml).join(', ')}<br>` +
                     `Pinyin: ${pinyinify(word.pinyin)}<br>` +
-                    `Translation: ${word.translation}` + '</div>')
+                    `Translation: ${word.translation}<br>` +
+                    `HSK: ${word.hsk_num === null ? '-' : word.hsk_num}` + '</div>')
                 foundResults = true;
             }
         }

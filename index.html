@@ -9,14 +9,16 @@
 </head>
 <body>
     <input type="text" placeholder="搜索" id="search-char">
-    <div id="char-info">
-        Strokes: <span class="num-strokes"></span><br>
-        Composition Type: <span class="comp-kind"></span><br>
-        Composed of: <span class="components"></span><br>
-        Radical: <span class="radical"></span><br>
-        Used in: <span class="compounds"></span>
+    <div id="results" style="display: none;">
+        <div id="char-info">
+            Strokes: <span class="num-strokes"></span><br>
+            Composition Type: <span class="comp-kind"></span><br>
+            Composed of: <span class="components"></span><br>
+            Radical: <span class="radical"></span><br>
+            Used in: <span class="compounds"></span>
+        </div>
     </div>
-    <div id="nothing-found">
+    <div id="nothing-found" style="display: none;">
         Nothing found, sorry!
     </div>
 </body>

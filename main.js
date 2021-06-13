@@ -102,6 +102,7 @@ $(function() {
         /** @type Object.<Char> */
         chars = {};
         for (let line of lines) {
+            line = line.trim();
             if (line.length === 0) continue;
             let lineSplit = line.split('\t');
             console.assert(lineSplit.length === 10);
@@ -162,6 +163,7 @@ $(function() {
     let loadWordList = function(tsvFile, knownChars) {
         let lines = tsvFile.split('\n');
         for (let line of lines) {
+            line = line.trim();
             if (line.length === 0) continue;
             let lineSplit = line.split('\t');
             console.assert(lineSplit.length === 5);
@@ -181,10 +183,11 @@ $(function() {
     $.get('/ccd.tsv', function(tsvFile) {
         loadCompositionData(tsvFile);
     }).then(function() {
-        $.get('/hsk1.tsv', function(tsvFile) {
-            loadWordList(tsvFile, chars);
-            console.log(words)
-        });
+        for (let num = 1; num <= 6; num++) {
+            $.get(`/hsk${num}.tsv`, function (tsvFile) {
+                loadWordList(tsvFile, chars);
+            });
+        }
     }).then(function() {
         updatePage(decodeURIComponent(location.href.split('#')[1]) || '');
     });

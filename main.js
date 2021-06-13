@@ -92,6 +92,24 @@ $(function() {
             }
             return componentOf
         }
+
+        /**
+         * @param {Object.<Set.<Word>>} words
+         * @return {Array.<Word>}
+         */
+        getContainingWords(words) {
+            /** @type Array.<Word> */
+            let usedIn = [];
+            for (let hanzi in words) {
+                if (!(words.hasOwnProperty(hanzi))) continue;
+                for (let word of words[hanzi]) {
+                    if (word.chars.map(char => char.hanzi).includes(this.hanzi)) {
+                        usedIn.push(word);
+                    }
+                }
+            }
+            return usedIn
+        }
     }
 
     /** @type Object.<Char> */
@@ -209,6 +227,12 @@ $(function() {
             }
             return `<a class="char" href="#${char.hanzi}">${char.hanzi}</a>`;
         }
+        /**
+         * @param {Word} word
+         */
+        let makeWordHtml = function(word) {
+            return `<a class="word" href="#${word.hanzi}">${word.hanzi}</a>`;
+        }
 
         let charInfo = $('#char-info');
         if (chars.hasOwnProperty(term)) {
@@ -219,6 +243,7 @@ $(function() {
             charInfo.children('.components').html(char.components.map(makeCharHtml).join(', '));
             charInfo.children('.radical').html(makeCharHtml(char.radical));
             charInfo.children('.compounds').html(char.getCompounds(chars).map(makeCharHtml).join(', '));
+            charInfo.children('.containing-words').html(char.getContainingWords(words).map(makeWordHtml).join(', '));
             charInfo.show();
             foundResults = true;
         } else {

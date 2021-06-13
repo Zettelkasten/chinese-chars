@@ -1,0 +1,179 @@
+$(function() {
+    const PLACEHOLDER = '*';
+
+    class CompositionKind {
+        /**
+         * @param {string} id
+         */
+        constructor(id) {
+            this.id = id;
+        }
+    }
+    const COMPOSITION_KIND = Object.freeze({
+        'Primitive': new CompositionKind('一'),
+        'Horizontal': new CompositionKind('吅'),
+        'Vertical': new CompositionKind('吕'),
+        'Inclusion': new CompositionKind('回'),
+        'VerticalTopRepetition': new CompositionKind('咒'),
+        'HorizontalLeftRightRepetition': new CompositionKind('弼'),
+        'ThreeRepetition': new CompositionKind('品'),
+        'FourRepetition': new CompositionKind('叕'),
+        'VerticalSeparated': new CompositionKind('冖'),
+        'Superposition': new CompositionKind('+'),
+        'Unknown': new CompositionKind('*')
+    });
+    const COMPOSITION_KIND_BY_ID = {};
+    for (let name in COMPOSITION_KIND) {
+        if (!(COMPOSITION_KIND.hasOwnProperty(name))) continue;
+        COMPOSITION_KIND_BY_ID[COMPOSITION_KIND[name].id] = COMPOSITION_KIND[name];
+    }
+
+    class Char {
+        /**
+         * @param {string} hanzi
+         * @param {int} numStrokes
+         * @param {string} cangjie
+         * @param {string} verification
+         * @param {CompositionKind} compKind
+         * @param {Array.<Char|string>} components
+         * @param {Char|string|null} radical
+         */
+        constructor(hanzi, numStrokes, cangjie, verification, compKind,
+                    components, radical) {
+            this.hanzi = hanzi;
+            this.numStrokes = numStrokes;
+            this.cangjie = cangjie;
+            this.verification = verification;
+            this.compKind = compKind;
+            this.components = components;
+            this.radical = radical;
+        }
+
+        /**
+         * Replaces hanzi strings with actual chars.
+         * @param {Object.<Char>} knownChars
+         */
+        setupComponents(knownChars) {
+            let self = this;
+            this.components = this.components.map(function(hanzi) {
+                if (knownChars.hasOwnProperty(hanzi)) {
+                    return knownChars[hanzi];
+                } else {
+                    console.log("Cannot find component", hanzi, "for char", self);
+                    return hanzi;
+                }
+            });
+            if (this.radical !== null) {
+                if (knownChars.hasOwnProperty(this.radical)) {
+                    this.radical = knownChars[this.radical];
+                } else {
+                    console.log("Cannot find radical", this.radical, "for char", this);
+                }
+            }
+            for (let comp of this.components) {
+                console.assert(comp !== undefined);
+            }
+            console.assert(this.radical !== undefined);
+        }
+
+        /**
+         * @param {Object.<Char>} knownChars
+         * @return {Array.<Char>}
+         */
+        getCompounds(knownChars) {
+            /** @type Array.<Char> */
+            let componentOf = [];
+            for (let hanzi in knownChars) {
+                if (!(knownChars.hasOwnProperty(hanzi))) continue;
+                let char = knownChars[hanzi];
+                if (char.components.includes(this) || char.radical === this) {
+                    componentOf.push(char);
+                }
+            }
+            return componentOf
+        }
+    }
+
+    /** @type Object.<Char> */
+    let chars = {};
+
+    let loadCompositionData = function(tsvFile) {
+        let lines = tsvFile.split('\n');
+        /** @type Object.<Char> */
+        chars = {};
+        for (let line of lines) {
+            if (line.length === 0) continue;
+            let lineSplit = line.split('\t');
+            console.assert(lineSplit.length === 10);
+            let [hanzi, numStrokes, compKind, firstPartChar, firstPartNumStrokes, secondPartChar, secondPartNumStrokes,
+                cangjie, verification, radical] = lineSplit;
+            numStrokes = parseInt(numStrokes);
+            firstPartNumStrokes = parseInt(firstPartNumStrokes);
+            secondPartNumStrokes = parseInt(secondPartNumStrokes);
+            compKind = COMPOSITION_KIND_BY_ID[compKind];
+            console.assert(compKind !== undefined);
+            /** @type Array.<string> */
+            let components = []
+            if (firstPartChar !== hanzi && firstPartChar !== PLACEHOLDER) {
+                components.push(firstPartChar);
+            }
+            if (secondPartChar !== hanzi && secondPartChar !== PLACEHOLDER) {
+                components.push(secondPartChar);
+            }
+            if (radical === hanzi || radical === PLACEHOLDER) {
+                radical = null;
+            }
+            chars[hanzi] = new Char(hanzi, numStrokes, cangjie, verification, compKind, components, radical);
+        }
+        for (let hanzi in chars) {
+            if (!(chars.hasOwnProperty(hanzi))) continue;
+            chars[hanzi].setupComponents(chars);
+        }
+    };
+    $.get('/ccd.tsv', function(tsvFile) {
+        loadCompositionData(tsvFile);
+        // load first
+        updatePage(decodeURIComponent(location.href.split('#')[1]) || '');
+    });
+
+    let updatePage = function(term) {
+        $('#search-char').val(term);
+        $('head title').html(term);
+        if (!chars.hasOwnProperty(term)) {
+            $('#nothing-found').show();
+            $('#char-info').hide();
+        } else {
+            let char = chars[term];
+            console.log(char);
+            $('#nothing-found').hide();
+            let charInfo = $('#char-info');
+            charInfo.show();
+            /**
+             * @param {Char|string|null} char
+             */
+            let makeCharHtml = function(char) {
+                if (char === null) {
+                    return '-';
+                }
+                if (!(char instanceof Char)) {
+                    return `<a class="char">${char}</a>`;
+                }
+                return `<a class="char" href="#${char.hanzi}">${char.hanzi}</a>`;
+            }
+
+            charInfo.children('.num-strokes').html(char.numStrokes.toString());
+            charInfo.children('.comp-kind').html(char.compKind.id);
+            charInfo.children('.components').html(char.components.map(makeCharHtml).join(', '));
+            charInfo.children('.radical').html(makeCharHtml(char.radical));
+            charInfo.children('.compounds').html(char.getCompounds(chars).map(makeCharHtml).join(', '));
+        }
+    };
+
+    $('#search-char').on('change', function() {
+        updatePage($(this).val());
+    });
+    $(window).on('hashchange', function() {
+        // see https://stackoverflow.com/a/1704842/2766231
+        updatePage(decodeURIComponent(location.href.split('#')[1]) || '');
+    });
+});

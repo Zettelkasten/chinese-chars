@@ -195,33 +195,54 @@ $(function() {
     let updatePage = function(term) {
         $('#search-char').val(term);
         $('head title').html(term);
-        if (!chars.hasOwnProperty(term)) {
-            $('#nothing-found').show();
-            $('#results').hide();
-        } else {
+        let foundResults = false;
+
+        /**
+         * @param {Char|string|null} char
+         */
+        let makeCharHtml = function(char) {
+            if (char === null) {
+                return '-';
+            }
+            if (!(char instanceof Char)) {
+                return `<a class="char">${char}</a>`;
+            }
+            return `<a class="char" href="#${char.hanzi}">${char.hanzi}</a>`;
+        }
+
+        let charInfo = $('#char-info');
+        if (chars.hasOwnProperty(term)) {
             let char = chars[term];
             console.log(char);
-            $('#nothing-found').hide();
-            $('#results').show();
-            let charInfo = $('#char-info');
-            /**
-             * @param {Char|string|null} char
-             */
-            let makeCharHtml = function(char) {
-                if (char === null) {
-                    return '-';
-                }
-                if (!(char instanceof Char)) {
-                    return `<a class="char">${char}</a>`;
-                }
-                return `<a class="char" href="#${char.hanzi}">${char.hanzi}</a>`;
-            }
-
             charInfo.children('.num-strokes').html(char.numStrokes.toString());
             charInfo.children('.comp-kind').html(char.compKind.id);
             charInfo.children('.components').html(char.components.map(makeCharHtml).join(', '));
             charInfo.children('.radical').html(makeCharHtml(char.radical));
             charInfo.children('.compounds').html(char.getCompounds(chars).map(makeCharHtml).join(', '));
+            charInfo.show();
+            foundResults = true;
+        } else {
+            charInfo.hide();
+        }
+        let wordList = $('#word-list');
+        wordList.html('');
+        if (words.hasOwnProperty(term)) {
+            for (let word of words[term]) {
+                console.log(word);
+                wordList.append('<div class="word-info">' +
+                    `Characters: ${word.chars.map(makeCharHtml).join(' ')}<br>` +
+                    `Pinyin: ${word.pinyin}<br>` +
+                    `Translation: ${word.translation}` + '</div>')
+                foundResults = true;
+            }
+        }
+
+        if (foundResults) {
+            $('#nothing-found').hide();
+            $('#results').show();
+        } else {
+            $('#nothing-found').show();
+            $('#results').hide();
         }
     };
 

@@ -5,3 +5,6 @@
     font-size: 1.5em;
     text-decoration: none;
 }
+.word-info {
+    border-bottom: solid 1px gray;
+}

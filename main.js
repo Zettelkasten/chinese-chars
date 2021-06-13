@@ -130,9 +130,62 @@ $(function() {
             chars[hanzi].setupComponents(chars);
         }
     };
+
+    class Word {
+        /**
+         * @param {Array.<Char>} chars
+         * @param {string} pinyin
+         * @param {string} translation
+         */
+        constructor(chars, pinyin, translation) {
+            console.assert(chars.length >= 1);
+            this.chars = chars;
+            this.pinyin = pinyin;
+            this.translation = translation;
+        }
+
+        /**
+         * @return {string}
+         */
+        get hanzi() {
+            return this.chars.map(char => char.hanzi).join('');
+        }
+    }
+
+    /** @type Object.<Set.<Word>> */
+    let words = {};
+
+    /**
+     * @param {string} tsvFile
+     * @param {Object.<Char>} knownChars
+     */
+    let loadWordList = function(tsvFile, knownChars) {
+        let lines = tsvFile.split('\n');
+        for (let line of lines) {
+            if (line.length === 0) continue;
+            let lineSplit = line.split('\t');
+            console.assert(lineSplit.length === 5);
+            let [hanzi, hanziTraditional, pinyin, pinyinUnicode, translation] = lineSplit;
+            let charHanzi = hanzi.split('');
+            /** @type Array.<Char> */
+            let wordChars = charHanzi.map(hanzi => knownChars[hanzi]);
+            let word = new Word(wordChars, pinyin, translation);
+            console.assert(word.hanzi === hanzi);
+            if (!words.hasOwnProperty(hanzi)) {
+                words[hanzi] = new Set();
+            }
+            words[hanzi].add(word);
+        }
+    };
+
     $.get('/ccd.tsv', function(tsvFile) {
         loadCompositionData(tsvFile);
-        // load first
+    }).then(function() {
+        $.get('/hsk1.tsv', function(tsvFile) {
+            loadWordList(tsvFile, chars);
+            console.log(words)
+        });
+    }).then(function() {
         updatePage(decodeURIComponent(location.href.split('#')[1]) || '');
     });
 
